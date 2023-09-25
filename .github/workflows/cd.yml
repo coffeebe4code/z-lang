@@ -1,0 +1,45 @@
+name: cd
+on:
+  push:
+    branches:
+      - main
+jobs:
+  release:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: type-lang
+      - uses: actions/checkout@v3
+        with:
+          repository: coffeebe4code/craneliftc
+          path: craneliftc
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+      - run: |
+          cd craneliftc
+          make release
+      - uses: goto-bus-stop/setup-zig@v2
+      - run: |
+          cd type-lang
+          zig build -Doptimize=ReleaseSafe
+          #  debug:
+          #    strategy:
+          #      matrix:
+          #        os: [ubuntu-latest, macos-latest, windows-latest]
+          #    runs-on: ${{matrix.os}}
+          #    steps:
+          #      - uses: actions/checkout@v3
+          #      - uses: dtolnay/rust-toolchain@stable
+          #        with:
+          #          toolchain: nightly
+          #      - run: |
+          #          cd cranelift
+          #          cargo build --debug
+          #      - uses: goto-bus-stop/setup-zig@v2
+          #      - run: |
+          #          zig build

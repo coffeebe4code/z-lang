@@ -1,0 +1,65 @@
+name: ci
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  lint:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: goto-bus-stop/setup-zig@v2
+      - run: |
+          zig fmt ./src --check
+          zig fmt build.zig --check
+  test-release:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: type-lang
+      - uses: actions/checkout@v3
+        with:
+          repository: coffeebe4code/craneliftc
+          path: craneliftc
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+      - run: |
+          cd craneliftc
+          make release
+      - uses: goto-bus-stop/setup-zig@v2
+      - run: |
+          cd type-lang
+          zig build -Doptimize=ReleaseSafe
+          zig build test -Doptimize=ReleaseSafe
+  test-debug:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: type-lang
+      - uses: actions/checkout@v3
+        with:
+          repository: coffeebe4code/craneliftc
+          path: craneliftc
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+      - run: |
+          cd craneliftc
+          make release
+      - uses: goto-bus-stop/setup-zig@v2
+      - run: |
+          cd type-lang
+          zig build
+          zig build test
